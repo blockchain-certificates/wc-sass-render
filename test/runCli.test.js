@@ -207,11 +207,10 @@ describe('runCli', () => {
     await runCli(['node', 'cli.js', 'src/**/*.scss', '--watch']);
 
     expect(watchMock).toHaveBeenCalledWith(
-        ['src/**/*.scss'],
+        [path.resolve(process.cwd(), 'src')],
         { ignoreInitial: true }
     );
-    expect(watchOnMock).toHaveBeenCalledWith('add', expect.any(Function));
-    expect(watchOnMock).toHaveBeenCalledWith('change', expect.any(Function));
+    expect(watchOnMock).toHaveBeenCalledWith('all', expect.any(Function));
     expect(watchOnMock).toHaveBeenCalledWith('error', console.error);
   });
 
@@ -223,13 +222,16 @@ describe('runCli', () => {
 
     await runCli(['node', 'cli.js', 'src/**/*.scss', '--watch']);
 
-    const addHandler = watchOnMock.mock.calls.find(
-        ([eventName]) => eventName === 'add'
+    const allHandler = watchOnMock.mock.calls.find(
+        ([eventName]) => eventName === 'all'
     )[1];
 
-    await addHandler('new.scss');
+    await allHandler('add', path.resolve(process.cwd(), 'src/components/new.scss'));
 
-    expect(renderMock).toHaveBeenCalledWith('new.scss', undefined);
+    expect(renderMock).toHaveBeenCalledWith(
+        path.resolve(process.cwd(), 'src/components/new.scss'),
+        undefined
+    );
   });
 
   it('renders watched change events', async () => {
@@ -240,13 +242,19 @@ describe('runCli', () => {
 
     await runCli(['node', 'cli.js', 'src/**/*.scss', '--watch']);
 
-    const changeHandler = watchOnMock.mock.calls.find(
-        ([eventName]) => eventName === 'change'
+    const allHandler = watchOnMock.mock.calls.find(
+        ([eventName]) => eventName === 'all'
     )[1];
 
-    await changeHandler('changed.scss');
+    await allHandler(
+        'change',
+        path.resolve(process.cwd(), 'src/components/changed.scss')
+    );
 
-    expect(renderMock).toHaveBeenCalledWith('changed.scss', undefined);
+    expect(renderMock).toHaveBeenCalledWith(
+        path.resolve(process.cwd(), 'src/components/changed.scss'),
+        undefined
+    );
   });
 
   it('logs watch render errors instead of throwing', async () => {
@@ -259,17 +267,40 @@ describe('runCli', () => {
 
     await runCli(['node', 'cli.js', 'src/**/*.scss', '--watch']);
 
-    const changeHandler = watchOnMock.mock.calls.find(
-        ([eventName]) => eventName === 'change'
+    const allHandler = watchOnMock.mock.calls.find(
+        ([eventName]) => eventName === 'all'
     )[1];
 
-    await changeHandler('changed.scss');
+    allHandler(
+        'change',
+        path.resolve(process.cwd(), 'src/components/changed.scss')
+    );
+
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(errorSpy).toHaveBeenCalled();
     expect(errorSpy.mock.calls[0][0]).toBeInstanceOf(Error);
     expect(errorSpy.mock.calls[0][0].message).toBe('watch boom');
 
     errorSpy.mockRestore();
+  });
+
+  it('ignores non-scss watch events', async () => {
+    globMock.mockReturnValue(toAsyncIterable([]));
+    renderMock.mockResolvedValue(undefined);
+
+    const { runCli } = await import('../runCli.js');
+
+    await runCli(['node', 'cli.js', 'src/**/*.scss', '--watch']);
+
+    const allHandler = watchOnMock.mock.calls.find(
+        ([eventName]) => eventName === 'all'
+    )[1];
+
+    await allHandler('change', path.resolve(process.cwd(), 'src/components/file.js'));
+
+    expect(renderMock).not.toHaveBeenCalled();
   });
 
   it('logs during render when not quiet', async () => {

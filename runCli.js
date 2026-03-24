@@ -142,10 +142,21 @@ export async function runCli(argvInput = process.argv) {
     if (values.watch) {
         log(`Watching ${inputs.join(', ')} for changes...`);
 
+        const dirs = [...new Set(
+            inputs.map(p => path.resolve(process.cwd(), p.split('**')[0]))
+        )];
+
+        const isScss = (file) => file.endsWith('.scss');
+
         chokidar
-            .watch(inputs, { ignoreInitial: true })
-            .on('add', renderSafe)
-            .on('change', renderSafe)
+            .watch(dirs, { ignoreInitial: true })
+            .on('all', (event, filePath) => {
+                if (!isScss(filePath)) return;
+
+                if (event === 'add' || event === 'change') {
+                    renderSafe(filePath);
+                }
+            })
             .on('error', console.error);
     }
 }
