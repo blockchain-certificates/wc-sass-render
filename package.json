@@ -33,6 +33,7 @@
     "sass": "^1.98.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.1",
     "vitest": "^4.1.1"
   }
 }
