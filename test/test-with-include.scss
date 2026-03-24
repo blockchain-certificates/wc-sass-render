@@ -1,4 +1,4 @@
-@import 'lib';
+@forward 'lib';
 
 a {
     @extend %blue;
