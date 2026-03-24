@@ -24,8 +24,8 @@
   "author": "Tristan Matthias <hello@tristanmatthias.com>",
   "scripts": {
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:coverage:report": "npx codecov -f coverage/lcov.info"
+    "coverage": "vitest run --coverage",
+    "coverage:report": "npx codecov -f coverage/lcov.info"
   },
   "license": "Apache-2.0",
   "dependencies": {
